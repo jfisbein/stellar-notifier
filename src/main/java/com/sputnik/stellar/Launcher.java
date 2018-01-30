@@ -28,7 +28,7 @@ public class Launcher {
     private static final Logger logger = LoggerFactory.getLogger(Launcher.class);
     private Mailer mailer = null;
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
         new Launcher().launch();
         demonize();
     }
@@ -38,11 +38,12 @@ public class Launcher {
         try {
             Thread.currentThread().join();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 
-    public void launch() throws IOException, InterruptedException {
+    private void launch() {
         initMailer();
         KeyPair account = KeyPair.fromAccountId(config.get("AccountId"));
 
@@ -78,8 +79,9 @@ public class Launcher {
             String value = server.transactions().transaction(paymentOperation.getLinks().getTransaction().getUri()).getCreatedAt();
             date = Date.from(Instant.parse(value));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
+
         return date;
     }
 
@@ -102,10 +104,10 @@ public class Launcher {
             message.setSubject("New Stellar operation");
             message.setFrom(new InternetAddress(config.get("mail.user")));
             message.setRecipient(Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
-            message.setText(String.format("Received %s %s from %s at %tc", amount, asset, from, date));
+            message.setText(String.format("Received %s %s from %s on %tc", amount, asset, from, date));
             mailer.send(message);
         } catch (MessagingException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -114,17 +116,11 @@ public class Launcher {
         if (asset.equals(new AssetTypeNative())) {
             assetName = "lumens";
         } else {
-            StringBuilder assetNameBuilder = new StringBuilder();
-            assetNameBuilder.append(((AssetTypeCreditAlphaNum) asset).getCode());
-            assetNameBuilder.append(":");
-            assetNameBuilder.append(((AssetTypeCreditAlphaNum) asset).getIssuer().getAccountId());
-            assetName = assetNameBuilder.toString();
+            assetName = ((AssetTypeCreditAlphaNum) asset).getCode();
+            assetName += ":";
+            assetName += ((AssetTypeCreditAlphaNum) asset).getIssuer().getAccountId();
         }
 
         return assetName;
-    }
-
-    private String loadLastPagingToken() {
-        return null;
     }
 }

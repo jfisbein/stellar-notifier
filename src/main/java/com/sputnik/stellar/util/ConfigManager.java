@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,6 +14,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -22,11 +22,11 @@ import java.util.TreeMap;
 public class ConfigManager {
     protected static final String DEFAULT_CONFIG_FILE_NAME = "configuration.properties";
     private static final Logger log = LoggerFactory.getLogger(ConfigManager.class);
-    protected SortedMap<String, ConfigValue> config = new TreeMap<>();
+    private SortedMap<String, ConfigValue> config = new TreeMap<>();
 
-    protected List<ConfigManagerListener> listeners = new ArrayList<>();
+    private List<ConfigManagerListener> listeners = new ArrayList<>();
 
-    protected File file;
+    private File file;
 
     public ConfigManager() {
         this("");
@@ -48,7 +48,7 @@ public class ConfigManager {
     }
 
     public String get(String key) {
-        String value = null;
+        String value;
         ConfigValue configValue = config.get(key);
         if (configValue != null) {
             value = configValue.getValue();
@@ -135,9 +135,11 @@ public class ConfigManager {
         try {
             writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
             Properties props = new Properties();
-            for (String key : config.keySet()) {
-                props.put(key, config.get(key).getValue());
+
+            for (Map.Entry<String, ConfigManager.ConfigValue> entry : config.entrySet()) {
+                props.put(entry.getKey(), entry.getValue().getValue());
             }
+
             props.store(writer, "");
         } catch (IOException e) {
             log.warn(e.getMessage());
@@ -150,7 +152,6 @@ public class ConfigManager {
                 }
             }
         }
-
     }
 
     private void loadConfiguration() {
@@ -164,9 +165,7 @@ public class ConfigManager {
                 for (String key : props.stringPropertyNames()) {
                     config.put(key, new ConfigValue(props.getProperty(key), null));
                 }
-                log.info("Loaded " + props.size() + " values");
-            } catch (FileNotFoundException e) {
-                log.warn(e.getMessage());
+                log.info("Loaded {} values", props.size());
             } catch (IOException e) {
                 log.warn(e.getMessage());
             } finally {
