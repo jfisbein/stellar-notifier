@@ -10,6 +10,7 @@ import org.stellar.sdk.Server;
 import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
 import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
 import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
+import org.stellar.sdk.responses.operations.CreateAccountOperationResponse;
 import org.stellar.sdk.responses.operations.CreatePassiveOfferOperationResponse;
 import org.stellar.sdk.responses.operations.InflationOperationResponse;
 import org.stellar.sdk.responses.operations.ManageDataOperationResponse;
@@ -49,11 +50,24 @@ public class MessagesCreator {
             message = createPathPaymentOperationMessage((PathPaymentOperationResponse) operation);
         } else if (operation instanceof SetOptionsOperationResponse) {
             message = createSetOptionsOperationMessage((SetOptionsOperationResponse) operation);
+        } else if (operation instanceof CreateAccountOperationResponse) {
+            message = createCreateAccountOperationMessage((CreateAccountOperationResponse) operation);
         } else {
             message = createUnknownOperationTypeMessage(operation);
         }
 
         return message;
+    }
+
+    private Message createCreateAccountOperationMessage(CreateAccountOperationResponse createAccountOperation) {
+        String account = createAccountOperation.getAccount().getAccountId();
+        String funder = createAccountOperation.getFunder().getAccountId();
+        String startingBalance = createAccountOperation.getStartingBalance();
+
+        String subject = "Stellar account created";
+        String body = String.format("Account %s created by funder %s with balance %s", account, funder, startingBalance);
+
+        return new Message(subject, body);
     }
 
     private Message createUnknownOperationTypeMessage(OperationResponse operation) {
