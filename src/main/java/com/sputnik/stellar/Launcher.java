@@ -38,6 +38,16 @@ public class Launcher {
     }
 
     private void launch() {
+        logger.info("Launching Stellar Notifier with configuration:");
+        logger.info("AccountId: {}", config.get("AccountId"));
+        logger.info("lastPagingToken: {}", config.get("lastPagingToken"));
+        logger.info("mail.smtp.auth: {}", config.get("mail.smtp.auth"));
+        logger.info("mail.smtp.starttls.enable: {}", config.get("mail.smtp.starttls.enable"));
+        logger.info("mail.smtp.host: {}", config.get("mail.smtp.host"));
+        logger.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
+        logger.info("mail.user: {}", config.get("mail.user"));
+        logger.info("mail.password: **********");
+
         initMailer();
         KeyPair account = KeyPair.fromAccountId(config.get("AccountId"));
         Server server = new Server("https://horizon.stellar.org");
