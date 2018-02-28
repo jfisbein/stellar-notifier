@@ -20,7 +20,6 @@ import org.stellar.sdk.responses.operations.PathPaymentOperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
 
@@ -189,7 +188,7 @@ public class MessagesCreator {
         String asset = getAssetName(paymentOperation.getAsset());
         String from = paymentOperation.getFrom().getAccountId();
         String to = paymentOperation.getTo().getAccountId();
-        Date date = getPaymentDate(server, paymentOperation);
+        Date date = Date.from(Instant.parse(paymentOperation.getCreatedAt()));
         String subject = "Stellar payment operation.";
         String body;
         if (paymentOperation.getTo().getAccountId().equals(account.getAccountId())) {
@@ -199,19 +198,6 @@ public class MessagesCreator {
         }
 
         return new Message(subject, body);
-    }
-
-    private Date getPaymentDate(Server server, PaymentOperationResponse paymentOperation) {
-        Date date = null;
-
-        try {
-            String value = server.transactions().transaction(paymentOperation.getLinks().getTransaction().getUri()).getCreatedAt();
-            date = Date.from(Instant.parse(value));
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-        }
-
-        return date;
     }
 
     private String getAssetName(Asset asset) {
