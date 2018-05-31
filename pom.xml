@@ -16,17 +16,18 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
-    <prerequisites>
-        <maven>3.2.1</maven>
-    </prerequisites>
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>com.stellar</groupId>
-            <artifactId>stellar-sdk</artifactId>
+            <groupId>com.github.stellar</groupId>
+            <artifactId>java-stellar-sdk</artifactId>
             <version>0.2.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/stellar-sdk.jar</systemPath>
         </dependency>
 
         <dependency>
