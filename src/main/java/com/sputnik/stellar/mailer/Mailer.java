@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public class Mailer {
 
-    protected Session session;
+    protected final Session session;
 
     public Mailer(Properties mailConfiguration, String username, String password) {
 

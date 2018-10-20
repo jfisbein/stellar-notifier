@@ -32,9 +32,9 @@ public class ConfigManager {
         this("");
     }
 
-    public ConfigManager(String configfileName) {
-        if (StringUtils.trimToNull(configfileName) != null) {
-            file = new File(configfileName);
+    public ConfigManager(String configFileName) {
+        if (StringUtils.trimToNull(configFileName) != null) {
+            file = new File(configFileName);
         } else {
             file = new File(DEFAULT_CONFIG_FILE_NAME);
         }
@@ -42,8 +42,8 @@ public class ConfigManager {
         loadConfiguration();
     }
 
-    public ConfigManager(File configfile) {
-        file = configfile;
+    public ConfigManager(File configFile) {
+        file = configFile;
         loadConfiguration();
     }
 

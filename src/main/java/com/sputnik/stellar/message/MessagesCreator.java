@@ -1,12 +1,9 @@
 package com.sputnik.stellar.message;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stellar.sdk.Asset;
 import org.stellar.sdk.AssetTypeCreditAlphaNum;
 import org.stellar.sdk.AssetTypeNative;
 import org.stellar.sdk.KeyPair;
-import org.stellar.sdk.Server;
 import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
 import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
 import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
@@ -21,14 +18,12 @@ import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 
 public class MessagesCreator {
-    private static final Logger logger = LoggerFactory.getLogger(MessagesCreator.class);
-    private Server server = new Server("https://horizon.stellar.org");
-
     public Message createMessage(OperationResponse operation, KeyPair account) {
-        Message message = null;
+        Message message;
         if (operation instanceof PaymentOperationResponse) {
             message = createPaymentMessage((PaymentOperationResponse) operation, account);
         } else if (operation instanceof AccountMergeOperationResponse) {
@@ -85,14 +80,14 @@ public class MessagesCreator {
         Integer masterKeyWeight = setOptionsOperation.getMasterKeyWeight();
         Integer medThreshold = setOptionsOperation.getMedThreshold();
         String[] setFlags = setOptionsOperation.getSetFlags();
-        String signer = setOptionsOperation.getSigner().getAccountId();
+        String signer = setOptionsOperation.getSignerKey();
         Integer signerWeight = setOptionsOperation.getSignerWeight();
 
         String subject = "Stellar Set Options operation";
         String body = String.format("Set options. clearFlags: %s, highThreshold: %s, homeDomain: %s, inflationDestination: %s, " +
                         "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
-                clearFlags, highThreshold, homeDomain, inflationDestination,
-                lowThreshold, masterKeyWeight, medThreshold, setFlags, signer, signerWeight);
+                Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
+                lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
 
         return new Message(subject, body);
     }
@@ -102,9 +97,7 @@ public class MessagesCreator {
         String asset = getAssetName(pathPaymentOperation.getAsset());
         String from = pathPaymentOperation.getFrom().getAccountId();
         String to = pathPaymentOperation.getTo().getAccountId();
-        String sendAsset = getAssetName(pathPaymentOperation.getSendAsset());
-        String sourceAmount = pathPaymentOperation.getSourceAmount();
-        String body = String.format("Created path payment of %s %s, from %s to %s, using %s %s", amount, asset, from, to, sourceAmount, sendAsset);
+        String body = String.format("Created path payment of %s %s, from %s to %s", amount, asset, from, to);
         String subject = "Stellar Path Payment operation";
 
         return new Message(subject, body);

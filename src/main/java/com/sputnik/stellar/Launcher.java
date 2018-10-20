@@ -15,6 +15,8 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.File;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Properties;
 
 public class Launcher {
@@ -61,7 +63,7 @@ public class Launcher {
 
         paymentsRequest.stream(operation -> {
                     config.set("lastPagingToken", operation.getPagingToken());
-                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId());
+                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
                     sendMessage(messagesCreator.createMessage(operation, account));
                 }
         );
