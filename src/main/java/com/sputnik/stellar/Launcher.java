@@ -4,6 +4,7 @@ import com.sputnik.stellar.mailer.Mailer;
 import com.sputnik.stellar.message.Message;
 import com.sputnik.stellar.message.MessagesCreator;
 import com.sputnik.stellar.util.ConfigManager;
+import org.glassfish.jersey.media.sse.EventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stellar.sdk.KeyPair;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class Launcher {
     private static final ConfigManager config = new ConfigManager(new File(System.getProperty("user.home"), ".stellar-notifier"));
@@ -26,17 +28,6 @@ public class Launcher {
 
     public static void main(String[] args) {
         new Launcher().launch();
-        demonize();
-    }
-
-    private static void demonize() {
-        // Let the app run forever
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        }
     }
 
     private void launch() {
@@ -54,19 +45,23 @@ public class Launcher {
         KeyPair account = KeyPair.fromAccountId(config.get("AccountId"));
         Server server = new Server("https://horizon.stellar.org");
         MessagesCreator messagesCreator = new MessagesCreator();
-
         PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
-        String lastToken = config.get("lastPagingToken");
-        if (lastToken != null) {
-            paymentsRequest.cursor(lastToken);
-        }
 
-        paymentsRequest.stream(operation -> {
-                    config.set("lastPagingToken", operation.getPagingToken());
-                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
-                    sendMessage(messagesCreator.createMessage(operation, account));
-                }
-        );
+        while (true) {
+            String lastToken = config.get("lastPagingToken");
+            if (lastToken != null) {
+                paymentsRequest.cursor(lastToken);
+            }
+
+            EventSource eventSource = paymentsRequest.stream(operation -> {
+                        config.set("lastPagingToken", operation.getPagingToken());
+                        logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
+                        sendMessage(messagesCreator.createMessage(operation, account));
+                    }
+            );
+
+            waitAndThen(TimeUnit.MINUTES, 30, eventSource::close);
+        }
     }
 
     private void initMailer() {
@@ -93,5 +88,16 @@ public class Launcher {
         } catch (MessagingException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    private void waitAndThen(TimeUnit timeUnit, long amount, Runnable runnable) {
+        try {
+            timeUnit.sleep(amount);
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        }
+
+        runnable.run();
     }
 }
