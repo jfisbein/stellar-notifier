@@ -23,4 +23,4 @@ COPY --from=maven target/stellar-notifier.jar /opt/stellar-notifier
 RUN wget -O /bin/smell-baron https://github.com/ohjames/smell-baron/releases/download/v0.4.2/smell-baron.musl && chmod a+x /bin/smell-baron
 ENTRYPOINT ["/bin/smell-baron"]
 
-CMD ["sh", "-c", "java -jar /opt/stellar-notifier/stellar-notifier.jar"]
+CMD ["java", "-jar", "/opt/stellar-notifier/stellar-notifier.jar"]
