@@ -1,21 +1,28 @@
-FROM jfisbein/docker-images:debian8-java8-maven3.2
+# base build image
+FROM maven:3.5-jdk-8 as maven
 
-RUN mkdir /src/
-COPY . /src/
-WORKDIR /src
-RUN mvn clean package && rm -rf ~/.m2
+# copy the project files
+COPY ./pom.xml ./pom.xml
 
-RUN mkdir -p /opt/stellar-notifier/lib
+# build all dependencies
+RUN mvn dependency:go-offline --batch-mode
 
-RUN cp target/stellar-notifier-*.jar /opt/stellar-notifier
-RUN cp target/dependency/* /opt/stellar-notifier/lib/
+# copy source files
+COPY ./src ./src
 
-RUN cp src/main/bash/entrypoint.sh /
+# build for release
+RUN mvn clean package --batch-mode
+
+# final base image
+FROM openjdk:8-jre-alpine
+
+RUN mkdir -p /opt/stellar-notifier/
+
+COPY --from=maven target/stellar-notifier.jar /opt/stellar-notifier
+COPY --from=maven ./src/main/bash/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-RUN rm -rf /src
-
-RUN wget -O /bin/smell-baron https://github.com/ohjames/smell-baron/releases/download/v0.4.2/smell-baron && chmod a+x /bin/smell-baron
+RUN wget -O /bin/smell-baron https://github.com/ohjames/smell-baron/releases/download/v0.4.2/smell-baron.musl && chmod a+x /bin/smell-baron
 ENTRYPOINT ["/bin/smell-baron"]
 
-CMD /entrypoint.sh
+CMD ["sh", "-c", "java -jar /opt/stellar-notifier/stellar-notifier.jar"]
