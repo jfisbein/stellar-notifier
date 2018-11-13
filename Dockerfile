@@ -19,8 +19,6 @@ FROM openjdk:8-jre-alpine
 RUN mkdir -p /opt/stellar-notifier/
 
 COPY --from=maven target/stellar-notifier.jar /opt/stellar-notifier
-COPY --from=maven ./src/main/bash/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 RUN wget -O /bin/smell-baron https://github.com/ohjames/smell-baron/releases/download/v0.4.2/smell-baron.musl && chmod a+x /bin/smell-baron
 ENTRYPOINT ["/bin/smell-baron"]
