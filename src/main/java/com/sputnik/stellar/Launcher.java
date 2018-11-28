@@ -18,6 +18,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.File;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -45,13 +46,10 @@ public class Launcher {
         KeyPair account = KeyPair.fromAccountId(config.get("AccountId"));
         Server server = new Server("https://horizon.stellar.org");
         MessagesCreator messagesCreator = new MessagesCreator();
-        PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
 
         while (true) {
-            String lastToken = config.get("lastPagingToken");
-            if (lastToken != null) {
-                paymentsRequest.cursor(lastToken);
-            }
+            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
+            Optional.ofNullable(config.get("lastPagingToken")).ifPresent(lastToken -> paymentsRequest.cursor(lastToken));
 
             EventSource eventSource = paymentsRequest.stream(operation -> {
                         config.set("lastPagingToken", operation.getPagingToken());
