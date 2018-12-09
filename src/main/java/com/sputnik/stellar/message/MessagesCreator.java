@@ -6,6 +6,7 @@ import org.stellar.sdk.AssetTypeNative;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
 import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
+import org.stellar.sdk.responses.operations.BumpSequenceOperationResponse;
 import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
 import org.stellar.sdk.responses.operations.CreateAccountOperationResponse;
 import org.stellar.sdk.responses.operations.CreatePassiveOfferOperationResponse;
@@ -46,11 +47,22 @@ public class MessagesCreator {
             message = createSetOptionsOperationMessage((SetOptionsOperationResponse) operation);
         } else if (operation instanceof CreateAccountOperationResponse) {
             message = createCreateAccountOperationMessage((CreateAccountOperationResponse) operation);
+        } else if (operation instanceof BumpSequenceOperationResponse) {
+            message = createBumpSequenceOperationMessage((BumpSequenceOperationResponse) operation);
         } else {
             message = createUnknownOperationTypeMessage(operation);
         }
 
         return message;
+    }
+
+    private Message createBumpSequenceOperationMessage(BumpSequenceOperationResponse operation) {
+        Long bumpTo = operation.getBumpTo();
+
+        String subject = "Stellar Bump Sequence";
+        String body = String.format("Bumped Sequence to %s", bumpTo);
+
+        return new Message(subject, body);
     }
 
     private Message createCreateAccountOperationMessage(CreateAccountOperationResponse createAccountOperation) {
