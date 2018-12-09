@@ -4,13 +4,14 @@ import com.sputnik.stellar.mailer.Mailer;
 import com.sputnik.stellar.message.Message;
 import com.sputnik.stellar.message.MessagesCreator;
 import com.sputnik.stellar.util.ConfigManager;
-import org.glassfish.jersey.media.sse.EventSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.requests.RequestBuilder.Order;
+import org.stellar.sdk.requests.SSEStream;
+import org.stellar.sdk.responses.operations.OperationResponse;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
@@ -51,14 +52,14 @@ public class Launcher {
             PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
             Optional.ofNullable(config.get("lastPagingToken")).ifPresent(lastToken -> paymentsRequest.cursor(lastToken));
 
-            EventSource eventSource = paymentsRequest.stream(operation -> {
+            SSEStream<OperationResponse> stream = paymentsRequest.stream(operation -> {
                         config.set("lastPagingToken", operation.getPagingToken());
                         logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
                         sendMessage(messagesCreator.createMessage(operation, account));
                     }
             );
 
-            waitAndThen(TimeUnit.MINUTES, 30, eventSource::close);
+            waitAndThen(TimeUnit.MINUTES, 30, stream::close);
         }
     }
 
