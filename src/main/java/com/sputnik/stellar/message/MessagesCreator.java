@@ -9,10 +9,10 @@ import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
 import org.stellar.sdk.responses.operations.BumpSequenceOperationResponse;
 import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
 import org.stellar.sdk.responses.operations.CreateAccountOperationResponse;
-import org.stellar.sdk.responses.operations.CreatePassiveOfferOperationResponse;
+import org.stellar.sdk.responses.operations.CreatePassiveSellOfferOperationResponse;
 import org.stellar.sdk.responses.operations.InflationOperationResponse;
 import org.stellar.sdk.responses.operations.ManageDataOperationResponse;
-import org.stellar.sdk.responses.operations.ManageOfferOperationResponse;
+import org.stellar.sdk.responses.operations.ManageSellOfferOperationResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
 import org.stellar.sdk.responses.operations.PathPaymentOperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
@@ -33,14 +33,14 @@ public class MessagesCreator {
             message = createAllowTrustOperationMessage((AllowTrustOperationResponse) operation);
         } else if (operation instanceof ChangeTrustOperationResponse) {
             message = createChangeTrustOperationMessage((ChangeTrustOperationResponse) operation);
-        } else if (operation instanceof CreatePassiveOfferOperationResponse) {
-            message = createCreatePassiveOfferOperationMessage((CreatePassiveOfferOperationResponse) operation);
+        } else if (operation instanceof CreatePassiveSellOfferOperationResponse) {
+            message = createPassiveSellOfferOperationMessage((CreatePassiveSellOfferOperationResponse) operation);
         } else if (operation instanceof InflationOperationResponse) {
             message = createInflationOperationMessage((InflationOperationResponse) operation);
         } else if (operation instanceof ManageDataOperationResponse) {
             message = createManageDataOperationMessage((ManageDataOperationResponse) operation);
-        } else if (operation instanceof ManageOfferOperationResponse) {
-            message = createManageOfferOperationMessage((ManageOfferOperationResponse) operation);
+        } else if (operation instanceof ManageSellOfferOperationResponse) {
+            message = createManageSellOfferOperationMessage((ManageSellOfferOperationResponse) operation);
         } else if (operation instanceof PathPaymentOperationResponse) {
             message = createPathPaymentOperationMessage((PathPaymentOperationResponse) operation);
         } else if (operation instanceof SetOptionsOperationResponse) {
@@ -115,15 +115,15 @@ public class MessagesCreator {
         return new Message(subject, body);
     }
 
-    private Message createManageOfferOperationMessage(ManageOfferOperationResponse manageOfferOperation) {
-        String amount = manageOfferOperation.getAmount();
-        String buyingAsset = getAssetName(manageOfferOperation.getBuyingAsset());
-        Integer offerId = manageOfferOperation.getOfferId();
-        String price = manageOfferOperation.getPrice();
-        String sellingAsset = getAssetName(manageOfferOperation.getSellingAsset());
+    private Message createManageSellOfferOperationMessage(ManageSellOfferOperationResponse manageSellOfferOperation) {
+        String amount = manageSellOfferOperation.getAmount();
+        String buyingAsset = getAssetName(manageSellOfferOperation.getBuyingAsset());
+        Integer offerId = manageSellOfferOperation.getOfferId();
+        String price = manageSellOfferOperation.getPrice();
+        String sellingAsset = getAssetName(manageSellOfferOperation.getSellingAsset());
 
-        String body = String.format("Managed offer buy %s %s at %s using %s with id %s", amount, buyingAsset, price, sellingAsset, offerId);
-        String subject = "Stellar manage offer operation.";
+        String body = String.format("Managed sell offer buy %s %s at %s using %s with id %s", amount, buyingAsset, price, sellingAsset, offerId);
+        String subject = "Stellar manage sell offer operation.";
 
         return new Message(subject, body);
     }
@@ -142,15 +142,15 @@ public class MessagesCreator {
         return createUnknownOperationTypeMessage(inflationOperation);
     }
 
-    private Message createCreatePassiveOfferOperationMessage(CreatePassiveOfferOperationResponse createPassiveOfferOperation) {
-        String amount = createPassiveOfferOperation.getAmount();
-        String buyingAsset = getAssetName(createPassiveOfferOperation.getBuyingAsset());
-        String price = createPassiveOfferOperation.getPrice();
-        String sellingAsset = getAssetName(createPassiveOfferOperation.getSellingAsset());
-        Integer offerId = createPassiveOfferOperation.getOfferId();
+    private Message createPassiveSellOfferOperationMessage(CreatePassiveSellOfferOperationResponse createPassiveSellOfferOperation) {
+        String amount = createPassiveSellOfferOperation.getAmount();
+        String buyingAsset = getAssetName(createPassiveSellOfferOperation.getBuyingAsset());
+        String price = createPassiveSellOfferOperation.getPrice();
+        String sellingAsset = getAssetName(createPassiveSellOfferOperation.getSellingAsset());
+        Integer offerId = createPassiveSellOfferOperation.getOfferId();
 
-        String body = String.format("Created passive offer buy %s %s at %s using %s with id %s", amount, buyingAsset, price, sellingAsset, offerId);
-        String subject = "Stellar passive offer created.";
+        String body = String.format("Created passive sell offer buy %s %s at %s using %s with id %s", amount, buyingAsset, price, sellingAsset, offerId);
+        String subject = "Stellar passive sell offer created.";
 
         return new Message(subject, body);
 
