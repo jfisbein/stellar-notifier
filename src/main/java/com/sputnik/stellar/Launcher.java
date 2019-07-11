@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
+import org.stellar.sdk.requests.EventListener;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.requests.RequestBuilder.Order;
 import org.stellar.sdk.requests.SSEStream;
@@ -52,12 +53,19 @@ public class Launcher {
             PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
             Optional.ofNullable(config.get("lastPagingToken")).ifPresent(lastToken -> paymentsRequest.cursor(lastToken));
 
-            SSEStream<OperationResponse> stream = paymentsRequest.stream(operation -> {
-                        config.set("lastPagingToken", operation.getPagingToken());
-                        logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
-                        sendMessage(messagesCreator.createMessage(operation, account));
-                    }
-            );
+            SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
+                @Override
+                public void onEvent(OperationResponse operation) {
+                    config.set("lastPagingToken", operation.getPagingToken());
+                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
+                    sendMessage(messagesCreator.createMessage(operation, account));
+                }
+
+                @Override
+                public void onFailure(shadow.com.google.common.base.Optional<Throwable> optional, shadow.com.google.common.base.Optional<Integer> optional1) {
+                    // Do nothing
+                }
+            });
 
             waitAndThen(TimeUnit.MINUTES, 30, stream::close);
         }
