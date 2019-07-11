@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class ConfigManager {
             try {
                 res = Integer.parseInt(value);
             } catch (NumberFormatException nfe) {
-                log.warn("Value (" + value + ") not numeric.");
+                log.warn("Value ({}) not numeric.", value);
             }
         }
 
@@ -130,10 +131,10 @@ public class ConfigManager {
     }
 
     private void saveConfiguration() {
-        log.debug("Saving configuration to file:" + file.getAbsolutePath());
+        log.debug("Saving configuration to file: {}", file.getAbsolutePath());
         Writer writer = null;
         try {
-            writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+            writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
             Properties props = new Properties();
 
             for (Map.Entry<String, ConfigManager.ConfigValue> entry : config.entrySet()) {
@@ -155,11 +156,11 @@ public class ConfigManager {
     }
 
     private void loadConfiguration() {
-        log.info("Loading configuration from file:" + file.getAbsolutePath());
+        log.info("Loading configuration from file: {}", file.getAbsolutePath());
         if (file.exists()) {
             Reader reader = null;
             try {
-                reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+                reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
                 Properties props = new Properties();
                 props.load(reader);
                 for (String key : props.stringPropertyNames()) {

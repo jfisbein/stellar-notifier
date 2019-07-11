@@ -51,7 +51,7 @@ public class Launcher {
 
         while (true) {
             PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
-            Optional.ofNullable(config.get("lastPagingToken")).ifPresent(lastToken -> paymentsRequest.cursor(lastToken));
+            Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
 
             SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
                 @Override
