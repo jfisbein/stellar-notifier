@@ -44,12 +44,12 @@ public class Launcher {
         logger.info("mail.password: **********");
 
         initMailer();
-        String accountId = config.get("AccountId");
-        Server server = new Server("https://horizon.stellar.org");
-        MessagesCreator messagesCreator = new MessagesCreator();
+        String monitoredAccountId = config.get("AccountId");
+        try (Server server = new Server("https://horizon.stellar.org")) {
+            MessagesCreator messagesCreator = new MessagesCreator();
 
-        while (true) {
-            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(accountId).order(Order.ASC);
+            // while (true) {
+            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(monitoredAccountId).order(Order.ASC);
             Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
 
             SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
@@ -57,7 +57,7 @@ public class Launcher {
                 public void onEvent(OperationResponse operation) {
                     config.set("lastPagingToken", operation.getPagingToken());
                     logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
-                    sendMessage(messagesCreator.createMessage(operation, accountId));
+                    sendMessage(messagesCreator.createMessage(operation, monitoredAccountId));
                 }
 
                 @Override
@@ -66,7 +66,8 @@ public class Launcher {
                 }
             });
 
-            waitAndThen(TimeUnit.MINUTES, 30, stream::close);
+            //   waitAndThen(TimeUnit.MINUTES, 30, stream::close);
+            //}
         }
     }
 
