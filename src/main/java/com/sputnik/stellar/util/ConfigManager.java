@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -35,7 +36,7 @@ public class ConfigManager {
     }
 
     public ConfigManager(String configFileName) {
-        if (StringUtils.trimToNull(configFileName) != null) {
+        if (StringUtils.isNotBlank(configFileName)) {
             file = new File(configFileName);
         } else {
             file = new File(DEFAULT_CONFIG_FILE_NAME);
@@ -50,25 +51,15 @@ public class ConfigManager {
     }
 
     public String get(String key) {
-        String value;
-        ConfigValue configValue = config.get(key);
-        if (configValue != null) {
-            value = configValue.getValue();
-        } else {
-            value = System.getenv(key);
-        }
-
-        return value;
+        return Optional.ofNullable(config.get(key))
+                .map(ConfigValue::getValue)
+                .orElse(System.getenv(key));
     }
 
     public String getDescription(String key) {
-        String description = null;
-        ConfigValue configValue = config.get(key);
-        if (configValue != null) {
-            description = configValue.getDescription();
-        }
-
-        return description;
+        return Optional.ofNullable(config.get(key))
+                .map(ConfigValue::getDescription)
+                .orElse(null);
     }
 
     public Integer getInt(String key) {
@@ -90,10 +81,9 @@ public class ConfigManager {
     }
 
     private void set(String key, String value, String description, boolean notifyListeners) {
-        String oldValue = null;
-        if (config.containsKey(key)) {
-            oldValue = config.get(key).getValue();
-        }
+        String oldValue = Optional.ofNullable(config.get(key))
+                .map(ConfigValue::getValue)
+                .orElse(null);
 
         ConfigValue newConfigValue = new ConfigValue(value, description);
 
@@ -105,10 +95,10 @@ public class ConfigManager {
     }
 
     public void register(String key, String defaultValue, String description) {
-        String existingValue = null;
-        if (config.containsKey(key)) {
-            existingValue = config.get(key).getValue();
-        }
+        String existingValue = Optional.ofNullable(config.get(key))
+                .map(ConfigValue::getValue)
+                .orElse(null);
+
         set(key, defaultValue, description, false);
         notifyRegisterListeners(key, existingValue, defaultValue);
     }
@@ -193,8 +183,8 @@ public class ConfigManager {
         }
     }
 
-    public String getConfigFileName() {
-        return file.getName();
+    public File getConfigFile() {
+        return file;
     }
 
     @Data
