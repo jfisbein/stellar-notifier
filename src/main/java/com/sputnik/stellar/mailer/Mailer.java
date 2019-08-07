@@ -1,5 +1,7 @@
 package com.sputnik.stellar.mailer;
 
+import lombok.Getter;
+
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
@@ -8,7 +10,7 @@ import javax.mail.Transport;
 import java.util.Properties;
 
 public class Mailer {
-
+    @Getter
     protected final Session session;
 
     public Mailer(Properties mailConfiguration, String username, String password) {
@@ -20,10 +22,6 @@ public class Mailer {
                         return new PasswordAuthentication(username, password);
                     }
                 });
-    }
-
-    public Session getSession() {
-        return session;
     }
 
     public void send(Message msg) throws MessagingException {

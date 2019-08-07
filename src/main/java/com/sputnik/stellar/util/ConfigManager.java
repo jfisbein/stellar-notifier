@@ -1,5 +1,6 @@
 package com.sputnik.stellar.util;
 
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,15 +90,14 @@ public class ConfigManager {
     }
 
     private void set(String key, String value, String description, boolean notifyListeners) {
-        ConfigValue configValue = config.get(key);
-        if (configValue == null) {
-            configValue = new ConfigValue(value, description);
+        String oldValue = null;
+        if (config.containsKey(key)) {
+            oldValue = config.get(key).getValue();
         }
 
-        String oldValue = configValue.getValue();
-        configValue.setValue(value);
+        ConfigValue newConfigValue = new ConfigValue(value, description);
 
-        config.put(key, configValue);
+        config.put(key, newConfigValue);
         saveConfiguration();
         if (notifyListeners) {
             notifyUpdateListeners(key, oldValue, value);
@@ -105,14 +105,12 @@ public class ConfigManager {
     }
 
     public void register(String key, String defaultValue, String description) {
-        if (!config.containsKey(key)) {
-            set(key, defaultValue, description, false);
-            notifyRegisterListeners(key, null, defaultValue);
-        } else {
-            ConfigValue configValue = config.get(key);
-            configValue.setDescription(description);
-            notifyRegisterListeners(key, config.get(key).getValue(), defaultValue);
+        String existingValue = null;
+        if (config.containsKey(key)) {
+            existingValue = config.get(key).getValue();
         }
+        set(key, defaultValue, description, false);
+        notifyRegisterListeners(key, existingValue, defaultValue);
     }
 
     public void unregister(String key) {
@@ -132,9 +130,7 @@ public class ConfigManager {
 
     private void saveConfiguration() {
         log.debug("Saving configuration to file: {}", file.getAbsolutePath());
-        Writer writer = null;
-        try {
-            writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
             Properties props = new Properties();
 
             for (Map.Entry<String, ConfigManager.ConfigValue> entry : config.entrySet()) {
@@ -144,23 +140,13 @@ public class ConfigManager {
             props.store(writer, "");
         } catch (IOException e) {
             log.warn(e.getMessage());
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    log.warn(e.getMessage(), e);
-                }
-            }
         }
     }
 
     private void loadConfiguration() {
         log.info("Loading configuration from file: {}", file.getAbsolutePath());
         if (file.exists()) {
-            Reader reader = null;
-            try {
-                reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
+            try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
                 Properties props = new Properties();
                 props.load(reader);
                 for (String key : props.stringPropertyNames()) {
@@ -169,14 +155,6 @@ public class ConfigManager {
                 log.info("Loaded {} values", props.size());
             } catch (IOException e) {
                 log.warn(e.getMessage());
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        log.warn(e.getMessage());
-                    }
-                }
             }
         }
     }
@@ -190,7 +168,7 @@ public class ConfigManager {
             try {
                 listener.registeredKey(key, existingValue, defaultValue);
             } catch (Exception e) {
-                log.warn("Error calling listener.", e);
+                log.warn("Error calling listener: {}.", listener, e);
             }
         }
     }
@@ -200,7 +178,7 @@ public class ConfigManager {
             try {
                 listener.unregisteredKey(key, existingValue.value);
             } catch (Exception e) {
-                log.warn("Error calling listener.", e);
+                log.warn("Error calling listener: {}.", listener, e);
             }
         }
     }
@@ -210,7 +188,7 @@ public class ConfigManager {
             try {
                 listener.updatedValue(key, oldValue, newValue);
             } catch (Exception e) {
-                log.warn("Error calling listener.", e);
+                log.warn("Error calling listener: {}.", listener, e);
             }
         }
     }
@@ -219,30 +197,9 @@ public class ConfigManager {
         return file.getName();
     }
 
-    class ConfigValue {
-        protected String value;
-
-        protected String description;
-
-        public ConfigValue(String value, String description) {
-            this.value = value;
-            this.description = description;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
+    @Data
+    static class ConfigValue {
+        protected final String value;
+        protected final String description;
     }
 }
