@@ -3,7 +3,6 @@ package com.sputnik.stellar.message;
 import org.stellar.sdk.Asset;
 import org.stellar.sdk.AssetTypeCreditAlphaNum;
 import org.stellar.sdk.AssetTypeNative;
-import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
 import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
 import org.stellar.sdk.responses.operations.BumpSequenceOperationResponse;
@@ -23,10 +22,10 @@ import java.util.Arrays;
 import java.util.Date;
 
 public class MessagesCreator {
-    public Message createMessage(OperationResponse operation, KeyPair account) {
+    public Message createMessage(OperationResponse operation, String accountId) {
         Message message;
         if (operation instanceof PaymentOperationResponse) {
-            message = createPaymentMessage((PaymentOperationResponse) operation, account);
+            message = createPaymentMessage((PaymentOperationResponse) operation, accountId);
         } else if (operation instanceof AccountMergeOperationResponse) {
             message = createAccountMergeMessage((AccountMergeOperationResponse) operation);
         } else if (operation instanceof AllowTrustOperationResponse) {
@@ -66,8 +65,8 @@ public class MessagesCreator {
     }
 
     private Message createCreateAccountOperationMessage(CreateAccountOperationResponse createAccountOperation) {
-        String account = createAccountOperation.getAccount().getAccountId();
-        String funder = createAccountOperation.getFunder().getAccountId();
+        String account = createAccountOperation.getAccount();
+        String funder = createAccountOperation.getFunder();
         String startingBalance = createAccountOperation.getStartingBalance();
 
         String subject = "Stellar account created";
@@ -78,7 +77,7 @@ public class MessagesCreator {
 
     private Message createUnknownOperationTypeMessage(OperationResponse operation) {
         String subject = "Stellar Unknown operation type.";
-        String body = String.format("Operation Received - Type: %s, Id: %s, SourceAccount: %s", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId());
+        String body = String.format("Operation Received - Type: %s, Id: %s, SourceAccount: %s", operation.getType(), operation.getId(), operation.getSourceAccount());
 
         return new Message(subject, body);
     }
@@ -87,7 +86,7 @@ public class MessagesCreator {
         String[] clearFlags = setOptionsOperation.getClearFlags();
         Integer highThreshold = setOptionsOperation.getHighThreshold();
         String homeDomain = setOptionsOperation.getHomeDomain();
-        String inflationDestination = setOptionsOperation.getInflationDestination().getAccountId();
+        String inflationDestination = setOptionsOperation.getInflationDestination();
         Integer lowThreshold = setOptionsOperation.getLowThreshold();
         Integer masterKeyWeight = setOptionsOperation.getMasterKeyWeight();
         Integer medThreshold = setOptionsOperation.getMedThreshold();
@@ -107,8 +106,8 @@ public class MessagesCreator {
     private Message createPathPaymentOperationMessage(PathPaymentOperationResponse pathPaymentOperation) {
         String amount = pathPaymentOperation.getAmount();
         String asset = getAssetName(pathPaymentOperation.getAsset());
-        String from = pathPaymentOperation.getFrom().getAccountId();
-        String to = pathPaymentOperation.getTo().getAccountId();
+        String from = pathPaymentOperation.getFrom();
+        String to = pathPaymentOperation.getTo();
         String body = String.format("Created path payment of %s %s, from %s to %s", amount, asset, from, to);
         String subject = "Stellar Path Payment operation";
 
@@ -158,8 +157,8 @@ public class MessagesCreator {
 
     private Message createChangeTrustOperationMessage(ChangeTrustOperationResponse changeTrustOperation) {
         String asset = getAssetName(changeTrustOperation.getAsset());
-        String trustee = changeTrustOperation.getTrustee().getAccountId();
-        String trustor = changeTrustOperation.getTrustor().getAccountId();
+        String trustee = changeTrustOperation.getTrustee();
+        String trustor = changeTrustOperation.getTrustor();
         String limit = changeTrustOperation.getLimit();
 
         String body = String.format("Changed trust, from %s, to %s on %s with limit %s", trustor, trustee, asset, limit);
@@ -170,8 +169,8 @@ public class MessagesCreator {
 
     private Message createAllowTrustOperationMessage(AllowTrustOperationResponse allowTrustOperation) {
         String asset = getAssetName(allowTrustOperation.getAsset());
-        String trustee = allowTrustOperation.getTrustee().getAccountId();
-        String trustor = allowTrustOperation.getTrustor().getAccountId();
+        String trustee = allowTrustOperation.getTrustee();
+        String trustor = allowTrustOperation.getTrustor();
 
         String body = String.format("Trust allowed from %s to %s on %s.", trustor, trustee, asset);
         String subject = "Stellar allow trust.";
@@ -180,23 +179,23 @@ public class MessagesCreator {
     }
 
     private Message createAccountMergeMessage(AccountMergeOperationResponse accountMergeOperation) {
-        String accountId = accountMergeOperation.getAccount().getAccountId();
-        String into = accountMergeOperation.getInto().getAccountId();
+        String accountId = accountMergeOperation.getAccount();
+        String into = accountMergeOperation.getInto();
         String body = String.format("Account %s merged into %s.", accountId, into);
         String subject = "Stellar merge account.";
 
         return new Message(subject, body);
     }
 
-    private Message createPaymentMessage(PaymentOperationResponse paymentOperation, KeyPair account) {
+    private Message createPaymentMessage(PaymentOperationResponse paymentOperation, String accountId) {
         String amount = paymentOperation.getAmount();
         String asset = getAssetName(paymentOperation.getAsset());
-        String from = paymentOperation.getFrom().getAccountId();
-        String to = paymentOperation.getTo().getAccountId();
+        String from = paymentOperation.getFrom();
+        String to = paymentOperation.getTo();
         Date date = Date.from(Instant.parse(paymentOperation.getCreatedAt()));
         String subject = "Stellar payment operation.";
         String body;
-        if (paymentOperation.getTo().getAccountId().equals(account.getAccountId())) {
+        if (paymentOperation.getTo().equals(accountId)) {
             body = String.format("Received payment of %s %s from %s to %s on %tc.", amount, asset, from, to, date);
         } else {
             body = String.format("Sent payment of %s %s from %s to %s on %tc.", amount, asset, from, to, date);
@@ -212,7 +211,7 @@ public class MessagesCreator {
         } else {
             assetName = ((AssetTypeCreditAlphaNum) asset).getCode();
             assetName += ":";
-            assetName += ((AssetTypeCreditAlphaNum) asset).getIssuer().getAccountId();
+            assetName += ((AssetTypeCreditAlphaNum) asset).getIssuer();
         }
 
         return assetName;

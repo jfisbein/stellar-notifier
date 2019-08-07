@@ -6,7 +6,6 @@ import com.sputnik.stellar.message.MessagesCreator;
 import com.sputnik.stellar.util.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stellar.sdk.KeyPair;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.EventListener;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
@@ -45,20 +44,20 @@ public class Launcher {
         logger.info("mail.password: **********");
 
         initMailer();
-        KeyPair account = KeyPair.fromAccountId(config.get("AccountId"));
+        String accountId = config.get("AccountId");
         Server server = new Server("https://horizon.stellar.org");
         MessagesCreator messagesCreator = new MessagesCreator();
 
         while (true) {
-            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(account).order(Order.ASC);
+            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(accountId).order(Order.ASC);
             Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
 
             SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
                 @Override
                 public void onEvent(OperationResponse operation) {
                     config.set("lastPagingToken", operation.getPagingToken());
-                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount().getAccountId(), Date.from(Instant.parse(operation.getCreatedAt())));
-                    sendMessage(messagesCreator.createMessage(operation, account));
+                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
+                    sendMessage(messagesCreator.createMessage(operation, accountId));
                 }
 
                 @Override
