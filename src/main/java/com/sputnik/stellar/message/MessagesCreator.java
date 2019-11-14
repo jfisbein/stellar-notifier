@@ -13,7 +13,9 @@ import org.stellar.sdk.responses.operations.InflationOperationResponse;
 import org.stellar.sdk.responses.operations.ManageDataOperationResponse;
 import org.stellar.sdk.responses.operations.ManageSellOfferOperationResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
-import org.stellar.sdk.responses.operations.PathPaymentOperationResponse;
+import org.stellar.sdk.responses.operations.PathPaymentBaseOperationResponse;
+import org.stellar.sdk.responses.operations.PathPaymentStrictReceiveOperationResponse;
+import org.stellar.sdk.responses.operations.PathPaymentStrictSendOperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
 
@@ -40,8 +42,10 @@ public class MessagesCreator {
             message = createManageDataOperationMessage((ManageDataOperationResponse) operation);
         } else if (operation instanceof ManageSellOfferOperationResponse) {
             message = createManageSellOfferOperationMessage((ManageSellOfferOperationResponse) operation);
-        } else if (operation instanceof PathPaymentOperationResponse) {
-            message = createPathPaymentOperationMessage((PathPaymentOperationResponse) operation);
+        } else if (operation instanceof PathPaymentStrictReceiveOperationResponse) {
+            message = createPathPaymentOperationMessage((PathPaymentStrictReceiveOperationResponse) operation);
+        } else if (operation instanceof PathPaymentStrictSendOperationResponse) {
+            message = createPathPaymentOperationMessage((PathPaymentStrictSendOperationResponse) operation);
         } else if (operation instanceof SetOptionsOperationResponse) {
             message = createSetOptionsOperationMessage((SetOptionsOperationResponse) operation);
         } else if (operation instanceof CreateAccountOperationResponse) {
@@ -103,7 +107,7 @@ public class MessagesCreator {
         return new Message(subject, body);
     }
 
-    private Message createPathPaymentOperationMessage(PathPaymentOperationResponse pathPaymentOperation) {
+    private Message createPathPaymentOperationMessage(PathPaymentBaseOperationResponse pathPaymentOperation) {
         String amount = pathPaymentOperation.getAmount();
         String asset = getAssetName(pathPaymentOperation.getAsset());
         String from = pathPaymentOperation.getFrom();
