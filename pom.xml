@@ -6,7 +6,7 @@
 
     <groupId>com.sputnik</groupId>
     <artifactId>stellar-notifier</artifactId>
-    <version>0.11.2</version>
+    <version>0.12.0</version>
     <inceptionYear>2018</inceptionYear>
 
     <properties>
