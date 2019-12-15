@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.github.stellar</groupId>
             <artifactId>java-stellar-sdk</artifactId>
-            <version>0.11.0</version>
+            <version>0.12.0</version>
         </dependency>
 
         <dependency>

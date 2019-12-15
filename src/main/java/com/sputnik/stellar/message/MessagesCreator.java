@@ -10,6 +10,7 @@ import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
 import org.stellar.sdk.responses.operations.CreateAccountOperationResponse;
 import org.stellar.sdk.responses.operations.CreatePassiveSellOfferOperationResponse;
 import org.stellar.sdk.responses.operations.InflationOperationResponse;
+import org.stellar.sdk.responses.operations.ManageBuyOfferOperationResponse;
 import org.stellar.sdk.responses.operations.ManageDataOperationResponse;
 import org.stellar.sdk.responses.operations.ManageSellOfferOperationResponse;
 import org.stellar.sdk.responses.operations.OperationResponse;
@@ -22,6 +23,7 @@ import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 public class MessagesCreator {
     public Message createMessage(OperationResponse operation, String accountId) {
@@ -52,11 +54,45 @@ public class MessagesCreator {
             message = createCreateAccountOperationMessage((CreateAccountOperationResponse) operation);
         } else if (operation instanceof BumpSequenceOperationResponse) {
             message = createBumpSequenceOperationMessage((BumpSequenceOperationResponse) operation);
+        } else if (operation instanceof ManageBuyOfferOperationResponse) {
+            message = createManageBuyOfferOperationResponseMessage((ManageBuyOfferOperationResponse) operation);
+        } else if (operation instanceof PathPaymentBaseOperationResponse) {
+            message = createPathPaymentBaseOperationResponse((PathPaymentBaseOperationResponse) operation);
         } else {
             message = createUnknownOperationTypeMessage(operation);
         }
 
         return message;
+    }
+
+    private Message createPathPaymentBaseOperationResponse(PathPaymentBaseOperationResponse operation) {
+        String amount = operation.getAmount();
+        String asset = getAssetName(operation.getAsset());
+        String from = operation.getFrom();
+        String to = operation.getTo();
+        String sourceAmount = operation.getSourceAmount();
+        String sourceAsset = getAssetName(operation.getSourceAsset());
+        String path = operation.getPath().stream().map(this::getAssetName).collect(Collectors.joining(", "));
+
+        String subject = "Path Payment Base Operation";
+        String body = String.format("Path Payment Base Operation. Asset: %s, From: %s, To: %s, Amount: %s, Source Amount: %s, Source Asset: %s, Path: %s ",
+                asset, from, to, amount, sourceAmount, sourceAsset, path);
+
+        return new Message(subject, body);
+    }
+
+    private Message createManageBuyOfferOperationResponseMessage(ManageBuyOfferOperationResponse operation) {
+        String amount = operation.getAmount();
+        String buyingAsset = getAssetName(operation.getBuyingAsset());
+        Integer offerId = operation.getOfferId();
+        String price = operation.getPrice();
+        String sellingAsset = getAssetName(operation.getSellingAsset());
+
+        String subject = "Manage Buy Offer Operation";
+        String body = String.format("Buy offer operation. offerId: %s, Buying Asset: %s, Amount: %s, Selling Asset: %s, Price: %s",
+                offerId, buyingAsset, amount, sellingAsset, price);
+
+        return new Message(subject, body);
     }
 
     private Message createBumpSequenceOperationMessage(BumpSequenceOperationResponse operation) {
@@ -210,12 +246,14 @@ public class MessagesCreator {
 
     private String getAssetName(Asset asset) {
         String assetName;
-        if (asset.equals(new AssetTypeNative())) {
+        if (asset instanceof AssetTypeNative) {
             assetName = "lumens";
-        } else {
+        } else if (asset instanceof AssetTypeCreditAlphaNum) {
             assetName = ((AssetTypeCreditAlphaNum) asset).getCode();
             assetName += ":";
             assetName += ((AssetTypeCreditAlphaNum) asset).getIssuer();
+        } else {
+            assetName = "unknown";
         }
 
         return assetName;
