@@ -1,31 +1,19 @@
 package com.sputnik.stellar.message;
 
-import org.stellar.sdk.Asset;
-import org.stellar.sdk.AssetTypeCreditAlphaNum;
-import org.stellar.sdk.AssetTypeNative;
-import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
-import org.stellar.sdk.responses.operations.AllowTrustOperationResponse;
-import org.stellar.sdk.responses.operations.BumpSequenceOperationResponse;
-import org.stellar.sdk.responses.operations.ChangeTrustOperationResponse;
-import org.stellar.sdk.responses.operations.CreateAccountOperationResponse;
-import org.stellar.sdk.responses.operations.CreatePassiveSellOfferOperationResponse;
-import org.stellar.sdk.responses.operations.InflationOperationResponse;
-import org.stellar.sdk.responses.operations.ManageBuyOfferOperationResponse;
-import org.stellar.sdk.responses.operations.ManageDataOperationResponse;
-import org.stellar.sdk.responses.operations.ManageSellOfferOperationResponse;
-import org.stellar.sdk.responses.operations.OperationResponse;
-import org.stellar.sdk.responses.operations.PathPaymentBaseOperationResponse;
-import org.stellar.sdk.responses.operations.PathPaymentStrictReceiveOperationResponse;
-import org.stellar.sdk.responses.operations.PathPaymentStrictSendOperationResponse;
-import org.stellar.sdk.responses.operations.PaymentOperationResponse;
-import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
+import org.stellar.sdk.Asset;
+import org.stellar.sdk.AssetTypeCreditAlphaNum;
+import org.stellar.sdk.AssetTypeNative;
+import org.stellar.sdk.Memo;
+import org.stellar.sdk.MemoText;
+import org.stellar.sdk.responses.TransactionResponse;
+import org.stellar.sdk.responses.operations.*;
 
 public class MessagesCreator {
+
     public Message createMessage(OperationResponse operation, String accountId) {
         Message message;
         if (operation instanceof PaymentOperationResponse) {
@@ -76,7 +64,7 @@ public class MessagesCreator {
 
         String subject = "Path Payment Base Operation";
         String body = String.format("Path Payment Base Operation. Asset: %s, From: %s, To: %s, Amount: %s, Source Amount: %s, Source Asset: %s, Path: %s ",
-                asset, from, to, amount, sourceAmount, sourceAsset, path);
+            asset, from, to, amount, sourceAmount, sourceAsset, path);
 
         return new Message(subject, body);
     }
@@ -90,7 +78,7 @@ public class MessagesCreator {
 
         String subject = "Manage Buy Offer Operation";
         String body = String.format("Buy offer operation. offerId: %s, Buying Asset: %s, Amount: %s, Selling Asset: %s, Price: %s",
-                offerId, buyingAsset, amount, sellingAsset, price);
+            offerId, buyingAsset, amount, sellingAsset, price);
 
         return new Message(subject, body);
     }
@@ -136,9 +124,9 @@ public class MessagesCreator {
 
         String subject = "Stellar Set Options operation";
         String body = String.format("Set options. clearFlags: %s, highThreshold: %s, homeDomain: %s, inflationDestination: %s, " +
-                        "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
-                Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
-                lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
+                "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
+            Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
+            lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
 
         return new Message(subject, body);
     }
@@ -232,16 +220,27 @@ public class MessagesCreator {
         String asset = getAssetName(paymentOperation.getAsset());
         String from = paymentOperation.getFrom();
         String to = paymentOperation.getTo();
+        String memoText = getMemo(paymentOperation);
         Date date = Date.from(Instant.parse(paymentOperation.getCreatedAt()));
         String subject = "Stellar payment operation.";
         String body;
         if (paymentOperation.getTo().equals(accountId)) {
-            body = String.format("Received payment of %s %s from %s to %s on %tc.", amount, asset, from, to, date);
+            body = String.format("Received payment of %s %s from %s to %s on %tc.%n Memo: %s", amount, asset, from, to, date, memoText);
         } else {
-            body = String.format("Sent payment of %s %s from %s to %s on %tc.", amount, asset, from, to, date);
+            body = String.format("Sent payment of %s %s from %s to %s on %tc.%n Memo: %s", amount, asset, from, to, date, memoText);
         }
 
         return new Message(subject, body);
+    }
+
+    private String getMemo(PaymentOperationResponse paymentOperation) {
+        Memo memo = paymentOperation.getTransaction().transform(TransactionResponse::getMemo).orNull();
+        String memoText = "";
+        if (memo instanceof MemoText) {
+            memoText = ((MemoText) memo).getText();
+        }
+
+        return memoText;
     }
 
     private String getAssetName(Asset asset) {
