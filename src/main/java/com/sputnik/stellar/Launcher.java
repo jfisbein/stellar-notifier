@@ -4,8 +4,16 @@ import com.sputnik.stellar.mailer.Mailer;
 import com.sputnik.stellar.message.Message;
 import com.sputnik.stellar.message.MessagesCreator;
 import com.sputnik.stellar.util.ConfigManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.File;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.EventListener;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
@@ -13,19 +21,9 @@ import org.stellar.sdk.requests.RequestBuilder.Order;
 import org.stellar.sdk.requests.SSEStream;
 import org.stellar.sdk.responses.operations.OperationResponse;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import java.io.File;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
+@Slf4j
 public class Launcher {
     private static final ConfigManager config = new ConfigManager(new File(System.getProperty("user.home"), ".stellar-notifier"));
-    private static final Logger logger = LoggerFactory.getLogger(Launcher.class);
     private Mailer mailer = null;
 
     public static void main(String[] args) {
@@ -33,15 +31,15 @@ public class Launcher {
     }
 
     private void launch() {
-        logger.info("Launching Stellar Notifier with configuration:");
-        logger.info("AccountId: {}", config.get("AccountId"));
-        logger.info("lastPagingToken: {}", config.get("lastPagingToken"));
-        logger.info("mail.smtp.auth: {}", config.get("mail.smtp.auth"));
-        logger.info("mail.smtp.starttls.enable: {}", config.get("mail.smtp.starttls.enable"));
-        logger.info("mail.smtp.host: {}", config.get("mail.smtp.host"));
-        logger.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
-        logger.info("mail.user: {}", config.get("mail.user"));
-        logger.info("mail.password: **********");
+        log.info("Launching Stellar Notifier with configuration:");
+        log.info("AccountId: {}", config.get("AccountId"));
+        log.info("lastPagingToken: {}", config.get("lastPagingToken"));
+        log.info("mail.smtp.auth: {}", config.get("mail.smtp.auth"));
+        log.info("mail.smtp.starttls.enable: {}", config.get("mail.smtp.starttls.enable"));
+        log.info("mail.smtp.host: {}", config.get("mail.smtp.host"));
+        log.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
+        log.info("mail.user: {}", config.get("mail.user"));
+        log.info("mail.password: **********");
 
         initMailer();
         String monitoredAccountId = config.get("AccountId");
@@ -55,14 +53,19 @@ public class Launcher {
             SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
                 @Override
                 public void onEvent(OperationResponse operation) {
-                    config.set("lastPagingToken", operation.getPagingToken());
-                    logger.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(), operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
-                    sendMessage(messagesCreator.createMessage(operation, monitoredAccountId));
+                    try {
+                        log.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(),
+                            operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
+                        sendMessage(messagesCreator.createMessage(operation, monitoredAccountId));
+                        config.set("lastPagingToken", operation.getPagingToken());
+                    } catch (Exception e) {
+                        log.error("Error trying to send email", e);
+                    }
                 }
 
                 @Override
-                public void onFailure(shadow.com.google.common.base.Optional<Throwable> optional, shadow.com.google.common.base.Optional<Integer> optional1) {
-                    // Do nothing
+                public void onFailure(shadow.com.google.common.base.Optional<Throwable> error, shadow.com.google.common.base.Optional<Integer> responseCode) {
+                    log.warn("{},{}", error.orNull(), responseCode.orNull());
                 }
             });
 
@@ -84,7 +87,7 @@ public class Launcher {
     }
 
     private void sendMessage(Message msg) {
-        logger.info("Sending message");
+        log.info("Sending message");
         javax.mail.Message message = new MimeMessage(mailer.getSession());
         try {
             message.setSubject(msg.getSubject());
@@ -93,7 +96,7 @@ public class Launcher {
             message.setText(msg.getBody());
             mailer.send(message);
         } catch (MessagingException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -101,7 +104,7 @@ public class Launcher {
         try {
             timeUnit.sleep(amount);
         } catch (InterruptedException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             Thread.currentThread().interrupt();
         }
 
