@@ -1,5 +1,7 @@
 # stellar-notifier
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jfisbein_stellar-notifier&metric=alert_status)](https://sonarcloud.io/dashboard?id=jfisbein_stellar-notifier)
+
 Very simple app to send email notifications when a new payment occurs to a defined Stellar account.
 
 ### Usage
