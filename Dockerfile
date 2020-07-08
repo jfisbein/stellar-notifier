@@ -5,7 +5,7 @@ FROM maven:3.5-jdk-8 as maven
 COPY ./pom.xml ./pom.xml
 
 # build all dependencies
-RUN mvn dependency:go-offline --batch-mode
+# RUN mvn dependency:go-offline --batch-mode
 
 # copy source files
 COPY ./src ./src
