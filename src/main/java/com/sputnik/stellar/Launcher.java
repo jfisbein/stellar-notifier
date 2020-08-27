@@ -23,91 +23,93 @@ import org.stellar.sdk.responses.operations.OperationResponse;
 
 @Slf4j
 public class Launcher {
-    private static final ConfigManager config = new ConfigManager(new File(System.getProperty("user.home"), ".stellar-notifier"));
-    private Mailer mailer = null;
 
-    public static void main(String[] args) {
-        new Launcher().launch();
-    }
+  private static final ConfigManager config = new ConfigManager(new File(System.getProperty("user.home"), ".stellar-notifier"));
+  private Mailer mailer = null;
 
-    private void launch() {
-        log.info("Launching Stellar Notifier with configuration:");
-        log.info("AccountId: {}", config.get("AccountId"));
-        log.info("lastPagingToken: {}", config.get("lastPagingToken"));
-        log.info("mail.smtp.auth: {}", config.get("mail.smtp.auth"));
-        log.info("mail.smtp.starttls.enable: {}", config.get("mail.smtp.starttls.enable"));
-        log.info("mail.smtp.host: {}", config.get("mail.smtp.host"));
-        log.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
-        log.info("mail.user: {}", config.get("mail.user"));
-        log.info("mail.password: **********");
+  public static void main(String[] args) {
+    new Launcher().launch();
+  }
 
-        initMailer();
-        String monitoredAccountId = config.get("AccountId");
-        try (Server server = new Server("https://horizon.stellar.org")) {
-            MessagesCreator messagesCreator = new MessagesCreator();
+  private void launch() {
+    log.info("Launching Stellar Notifier with configuration:");
+    log.info("AccountId: {}", config.get("AccountId"));
+    log.info("lastPagingToken: {}", config.get("lastPagingToken"));
+    log.info("mail.smtp.auth: {}", config.get("mail.smtp.auth"));
+    log.info("mail.smtp.starttls.enable: {}", config.get("mail.smtp.starttls.enable"));
+    log.info("mail.smtp.host: {}", config.get("mail.smtp.host"));
+    log.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
+    log.info("mail.user: {}", config.get("mail.user"));
+    log.info("mail.password: **********");
 
-            // while (true) {
-            PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(monitoredAccountId).order(Order.ASC);
-            Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
+    initMailer();
+    String monitoredAccountId = config.get("AccountId");
+    try (Server server = new Server("https://horizon.stellar.org")) {
+      MessagesCreator messagesCreator = new MessagesCreator();
 
-            SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<OperationResponse>() {
-                @Override
-                public void onEvent(OperationResponse operation) {
-                    try {
-                        log.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(),
-                            operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
-                        sendMessage(messagesCreator.createMessage(operation, monitoredAccountId));
-                        config.set("lastPagingToken", operation.getPagingToken());
-                    } catch (Exception e) {
-                        log.error("Error trying to send email", e);
-                    }
-                }
+      // while (true) {
+      PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(monitoredAccountId).order(Order.ASC);
+      Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
 
-                @Override
-                public void onFailure(shadow.com.google.common.base.Optional<Throwable> error, shadow.com.google.common.base.Optional<Integer> responseCode) {
-                    log.warn("{},{}", error.orNull(), responseCode.orNull());
-                }
-            });
-
-            //   waitAndThen(TimeUnit.MINUTES, 30, stream::close);
-            //}
-        }
-    }
-
-    private void initMailer() {
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", config.get("mail.smtp.auth"));
-        props.put("mail.smtp.starttls.enable", config.get("mail.smtp.starttls.enable"));
-        props.put("mail.smtp.host", config.get("mail.smtp.host"));
-        props.put("mail.smtp.port", config.get("mail.smtp.port"));
-        String username = config.get("mail.user");
-        String password = config.get("mail.password");
-
-        mailer = new Mailer(props, username, password);
-    }
-
-    private void sendMessage(Message msg) {
-        log.info("Sending message");
-        javax.mail.Message message = new MimeMessage(mailer.getSession());
-        try {
-            message.setSubject(msg.getSubject());
-            message.setFrom(new InternetAddress(config.get("mail.user")));
-            message.setRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
-            message.setText(msg.getBody());
-            mailer.send(message);
-        } catch (MessagingException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    private void waitAndThen(TimeUnit timeUnit, long amount, Runnable runnable) {
-        try {
-            timeUnit.sleep(amount);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
+      SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<>() {
+        @Override
+        public void onEvent(OperationResponse operation) {
+          try {
+            log.info("Operation Received - Type: {}, Id: {}, SourceAccount: {}, Date: {}", operation.getType(),
+              operation.getId(), operation.getSourceAccount(), Date.from(Instant.parse(operation.getCreatedAt())));
+            sendMessage(messagesCreator.createMessage(operation, monitoredAccountId));
+            config.set("lastPagingToken", operation.getPagingToken());
+          } catch (Exception e) {
+            log.error("Error trying to send email", e);
+          }
         }
 
-        runnable.run();
+        @Override
+        public void onFailure(shadow.com.google.common.base.Optional<Throwable> error,
+          shadow.com.google.common.base.Optional<Integer> responseCode) {
+          log.warn("{},{}", error.orNull(), responseCode.orNull());
+        }
+      });
+
+      //   waitAndThen(TimeUnit.MINUTES, 30, stream::close);
+      //}
     }
+  }
+
+  private void initMailer() {
+    Properties props = new Properties();
+    props.put("mail.smtp.auth", config.get("mail.smtp.auth"));
+    props.put("mail.smtp.starttls.enable", config.get("mail.smtp.starttls.enable"));
+    props.put("mail.smtp.host", config.get("mail.smtp.host"));
+    props.put("mail.smtp.port", config.get("mail.smtp.port"));
+    String username = config.get("mail.user");
+    String password = config.get("mail.password");
+
+    mailer = new Mailer(props, username, password);
+  }
+
+  private void sendMessage(Message msg) {
+    log.info("Sending message");
+    javax.mail.Message message = new MimeMessage(mailer.getSession());
+    try {
+      message.setSubject(msg.getSubject());
+      message.setFrom(new InternetAddress(config.get("mail.user")));
+      message.setRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
+      message.setText(msg.getBody());
+      mailer.send(message);
+    } catch (MessagingException e) {
+      log.error(e.getMessage(), e);
+    }
+  }
+
+  private void waitAndThen(TimeUnit timeUnit, long amount, Runnable runnable) {
+    try {
+      timeUnit.sleep(amount);
+    } catch (InterruptedException e) {
+      log.error(e.getMessage(), e);
+      Thread.currentThread().interrupt();
+    }
+
+    runnable.run();
+  }
 }
