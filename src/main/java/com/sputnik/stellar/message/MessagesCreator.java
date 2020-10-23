@@ -1,16 +1,13 @@
 package com.sputnik.stellar.message;
 
+import org.stellar.sdk.*;
+import org.stellar.sdk.responses.TransactionResponse;
+import org.stellar.sdk.responses.operations.*;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
-import org.stellar.sdk.Asset;
-import org.stellar.sdk.AssetTypeCreditAlphaNum;
-import org.stellar.sdk.AssetTypeNative;
-import org.stellar.sdk.Memo;
-import org.stellar.sdk.MemoText;
-import org.stellar.sdk.responses.TransactionResponse;
-import org.stellar.sdk.responses.operations.*;
 
 public class MessagesCreator {
 
@@ -64,7 +61,7 @@ public class MessagesCreator {
 
         String subject = "Path Payment Base Operation";
         String body = String.format("Path Payment Base Operation. Asset: %s, From: %s, To: %s, Amount: %s, Source Amount: %s, Source Asset: %s, Path: %s ",
-            asset, from, to, amount, sourceAmount, sourceAsset, path);
+                asset, from, to, amount, sourceAmount, sourceAsset, path);
 
         return new Message(subject, body);
     }
@@ -72,13 +69,13 @@ public class MessagesCreator {
     private Message createManageBuyOfferOperationResponseMessage(ManageBuyOfferOperationResponse operation) {
         String amount = operation.getAmount();
         String buyingAsset = getAssetName(operation.getBuyingAsset());
-        Integer offerId = operation.getOfferId();
+        Long offerId = operation.getOfferId();
         String price = operation.getPrice();
         String sellingAsset = getAssetName(operation.getSellingAsset());
 
         String subject = "Manage Buy Offer Operation";
         String body = String.format("Buy offer operation. offerId: %s, Buying Asset: %s, Amount: %s, Selling Asset: %s, Price: %s",
-            offerId, buyingAsset, amount, sellingAsset, price);
+                offerId, buyingAsset, amount, sellingAsset, price);
 
         return new Message(subject, body);
     }
@@ -124,9 +121,9 @@ public class MessagesCreator {
 
         String subject = "Stellar Set Options operation";
         String body = String.format("Set options. clearFlags: %s, highThreshold: %s, homeDomain: %s, inflationDestination: %s, " +
-                "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
-            Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
-            lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
+                        "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
+                Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
+                lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
 
         return new Message(subject, body);
     }
@@ -145,7 +142,7 @@ public class MessagesCreator {
     private Message createManageSellOfferOperationMessage(ManageSellOfferOperationResponse manageSellOfferOperation) {
         String amount = manageSellOfferOperation.getAmount();
         String buyingAsset = getAssetName(manageSellOfferOperation.getBuyingAsset());
-        Integer offerId = manageSellOfferOperation.getOfferId();
+        Long offerId = manageSellOfferOperation.getOfferId();
         String price = manageSellOfferOperation.getPrice();
         String sellingAsset = getAssetName(manageSellOfferOperation.getSellingAsset());
 
@@ -174,7 +171,7 @@ public class MessagesCreator {
         String buyingAsset = getAssetName(createPassiveSellOfferOperation.getBuyingAsset());
         String price = createPassiveSellOfferOperation.getPrice();
         String sellingAsset = getAssetName(createPassiveSellOfferOperation.getSellingAsset());
-        Integer offerId = createPassiveSellOfferOperation.getOfferId();
+        Long offerId = createPassiveSellOfferOperation.getOfferId();
 
         String body = String.format("Created passive sell offer buy %s %s at %s using %s with id %s", amount, buyingAsset, price, sellingAsset, offerId);
         String subject = "Stellar passive sell offer created.";
