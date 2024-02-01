@@ -18,7 +18,6 @@ import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.EventListener;
 import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.requests.RequestBuilder.Order;
-import org.stellar.sdk.requests.SSEStream;
 import org.stellar.sdk.responses.operations.OperationResponse;
 
 @Slf4j
@@ -47,11 +46,10 @@ public class Launcher {
     try (Server server = new Server("https://horizon.stellar.org")) {
       MessagesCreator messagesCreator = new MessagesCreator();
 
-      // while (true) {
       PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(monitoredAccountId).order(Order.ASC);
       Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
 
-      SSEStream<OperationResponse> stream = paymentsRequest.stream(new EventListener<>() {
+      paymentsRequest.stream(new EventListener<>() {
         @Override
         public void onEvent(OperationResponse operation) {
           try {
@@ -65,14 +63,11 @@ public class Launcher {
         }
 
         @Override
-        public void onFailure(shadow.com.google.common.base.Optional<Throwable> error,
-          shadow.com.google.common.base.Optional<Integer> responseCode) {
-          log.warn("{},{}", error.orNull(), responseCode.orNull());
+        public void onFailure(Optional<Throwable> error, Optional<Integer> responseCode) {
+          log.warn("{},{}", error.orElse(null), responseCode.orElse(null));
         }
       });
 
-      //   waitAndThen(TimeUnit.MINUTES, 30, stream::close);
-      //}
     }
   }
 
