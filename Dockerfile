@@ -1,5 +1,5 @@
 # base build image
-FROM maven:3.6.3-openjdk-11-slim as maven
+FROM maven:3.6.3-openjdk-17-slim AS maven
 
 # copy the project files
 COPY ./pom.xml ./pom.xml
@@ -14,7 +14,7 @@ COPY ./src ./src
 RUN mvn clean package --batch-mode
 
 # final base image
-FROM openjdk:11-jre
+FROM eclipse-temurin:17.0.10_7-jdk-jammy
 
 RUN mkdir -p /opt/stellar-notifier/
 
