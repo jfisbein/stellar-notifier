@@ -2,11 +2,12 @@ package com.sputnik.stellar;
 
 import com.sputnik.stellar.mailer.Mailer;
 import com.sputnik.stellar.message.Message;
-import com.sputnik.stellar.message.MessagesCreator;
+import com.sputnik.stellar.message.PaymentOperationMessagesCreator;
 import com.sputnik.stellar.util.ConfigManager;
 import java.io.File;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -40,11 +41,12 @@ public class Launcher {
     log.info("mail.smtp.port: {}", config.get("mail.smtp.port"));
     log.info("mail.user: {}", config.get("mail.user"));
     log.info("mail.password: **********");
+    log.info("excluded_tokens: {}", config.get("excluded_tokens"));
 
     initMailer();
     String monitoredAccountId = config.get("AccountId");
     try (Server server = new Server("https://horizon.stellar.org")) {
-      MessagesCreator messagesCreator = new MessagesCreator();
+      PaymentOperationMessagesCreator messagesCreator = new PaymentOperationMessagesCreator(getExcludedTokens());
 
       PaymentsRequestBuilder paymentsRequest = server.payments().forAccount(monitoredAccountId).order(Order.ASC);
       Optional.ofNullable(config.get("lastPagingToken")).ifPresent(paymentsRequest::cursor);
@@ -84,17 +86,28 @@ public class Launcher {
   }
 
   private void sendMessage(Message msg) {
-    log.info("Sending message");
-    javax.mail.Message message = new MimeMessage(mailer.getSession());
-    try {
-      message.setSubject(msg.getSubject());
-      message.setFrom(new InternetAddress(config.get("mail.user")));
-      message.setRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
-      message.setText(msg.getBody());
-      mailer.send(message);
-    } catch (MessagingException e) {
-      log.error(e.getMessage(), e);
+    if (msg != null) {
+      log.info("Sending message");
+      javax.mail.Message message = new MimeMessage(mailer.getSession());
+      try {
+        message.setSubject(msg.getSubject());
+        message.setFrom(new InternetAddress(config.get("mail.user")));
+        message.setRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
+        message.setText(msg.getBody());
+        mailer.send(message);
+      } catch (MessagingException e) {
+        log.error(e.getMessage(), e);
+      }
     }
+  }
+
+  private List<String> getExcludedTokens() {
+    List<String> excludedTokens = List.of();
+    String excludedTokensText = config.get("excluded_tokens");
+    if (excludedTokensText != null) {
+      excludedTokens = List.of(excludedTokensText.split(","));
+    }
+    return excludedTokens;
   }
 
   private void waitAndThen(TimeUnit timeUnit, long amount, Runnable runnable) {

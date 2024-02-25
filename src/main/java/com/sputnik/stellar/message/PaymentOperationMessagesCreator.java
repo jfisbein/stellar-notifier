@@ -47,7 +47,13 @@ import org.stellar.sdk.responses.operations.RevokeSponsorshipOperationResponse;
 import org.stellar.sdk.responses.operations.SetOptionsOperationResponse;
 import org.stellar.sdk.responses.operations.SetTrustLineFlagsOperationResponse;
 
-public class MessagesCreator {
+public class PaymentOperationMessagesCreator {
+
+  private final List<String> excludedTokens;
+
+  public PaymentOperationMessagesCreator(List<String> excludedTokens) {
+    this.excludedTokens = excludedTokens;
+  }
 
   public Message createMessage(OperationResponse operation, String accountId) {
     Message message;
@@ -421,6 +427,10 @@ public class MessagesCreator {
       body = String.format("Sent payment of %s %s from %s to %s on %tc.%n Memo: %s", amount, asset, from, to, date, memoText);
     }
 
+    if (excludedTokens.contains(getAssetCode(paymentOperation.getAsset()))) {
+      return null;
+    }
+
     return new Message(subject, body);
   }
 
@@ -447,5 +457,18 @@ public class MessagesCreator {
     }
 
     return assetName;
+  }
+
+  private String getAssetCode(Asset asset) {
+    String assetCode;
+    if (asset instanceof AssetTypeNative) {
+      assetCode = "XLM";
+    } else if (asset instanceof AssetTypeCreditAlphaNum pathPaymentBaseOperationResponse) {
+      assetCode = pathPaymentBaseOperationResponse.getCode();
+    } else {
+      assetCode = "unknown";
+    }
+
+    return assetCode;
   }
 }
