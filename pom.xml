@@ -28,7 +28,7 @@
     <dependency>
       <groupId>com.github.stellar</groupId>
       <artifactId>java-stellar-sdk</artifactId>
-      <version>0.43.0</version>
+      <version>0.43.1</version>
     </dependency>
 
     <dependency>
