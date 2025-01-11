@@ -90,10 +90,10 @@ public class Launcher {
       log.info("Sending message");
       javax.mail.Message message = new MimeMessage(mailer.getSession());
       try {
-        message.setSubject(msg.getSubject());
+        message.setSubject(msg.subject());
         message.setFrom(new InternetAddress(config.get("mail.user")));
         message.setRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(config.get("mail.recipient")));
-        message.setText(msg.getBody());
+        message.setText(msg.body());
         mailer.send(message);
       } catch (MessagingException e) {
         log.error(e.getMessage(), e);

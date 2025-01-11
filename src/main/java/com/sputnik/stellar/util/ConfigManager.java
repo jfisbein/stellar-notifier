@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,13 +51,13 @@ public class ConfigManager {
 
   public String get(String key) {
     return Optional.ofNullable(config.get(key))
-      .map(ConfigValue::getValue)
+      .map(ConfigValue::value)
       .orElse(System.getenv(key));
   }
 
   public String getDescription(String key) {
     return Optional.ofNullable(config.get(key))
-      .map(ConfigValue::getDescription)
+      .map(ConfigValue::description)
       .orElse(null);
   }
 
@@ -82,7 +81,7 @@ public class ConfigManager {
 
   private void set(String key, String value, String description, boolean notifyListeners) {
     String oldValue = Optional.ofNullable(config.get(key))
-      .map(ConfigValue::getValue)
+      .map(ConfigValue::value)
       .orElse(null);
 
     ConfigValue newConfigValue = new ConfigValue(value, description);
@@ -96,7 +95,7 @@ public class ConfigManager {
 
   public void register(String key, String defaultValue, String description) {
     String existingValue = Optional.ofNullable(config.get(key))
-      .map(ConfigValue::getValue)
+      .map(ConfigValue::value)
       .orElse(null);
 
     set(key, defaultValue, description, false);
@@ -124,7 +123,7 @@ public class ConfigManager {
       Properties props = new Properties();
 
       for (Map.Entry<String, ConfigManager.ConfigValue> entry : config.entrySet()) {
-        props.put(entry.getKey(), entry.getValue().getValue());
+        props.put(entry.getKey(), entry.getValue().value());
       }
 
       props.store(writer, "");
@@ -187,10 +186,8 @@ public class ConfigManager {
     return file;
   }
 
-  @Data
-  static class ConfigValue {
 
-    protected final String value;
-    protected final String description;
+  record ConfigValue(String value, String description) {
+
   }
 }

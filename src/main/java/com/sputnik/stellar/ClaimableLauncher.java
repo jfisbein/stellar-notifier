@@ -2,14 +2,11 @@ package com.sputnik.stellar;
 
 import com.sputnik.stellar.util.ConfigManager;
 import java.io.File;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.stellar.sdk.Asset;
-import org.stellar.sdk.Claimant;
 import org.stellar.sdk.Predicate;
 import org.stellar.sdk.Server;
 import org.stellar.sdk.requests.RequestBuilder.Order;
@@ -43,7 +40,7 @@ public class ClaimableLauncher {
             claimant.getPredicate()) + " " + evaluatePredicate(claimant.getPredicate(), Instant.now()))
           .toList();
 
-        System.out.println(claimableBalances.stream().collect(Collectors.joining("\n")));
+        System.out.println(String.join("\n", claimableBalances));
       });
     } catch (Exception e) {
       e.printStackTrace();
@@ -55,12 +52,10 @@ public class ClaimableLauncher {
     try (Server server = new Server("https://horizon.stellar.org")) {
       getActualClaimableBalanceResponse2(monitoredAccountId, server).forEach(
         claim -> System.out.println(predicateToText(claim.getPredicate())));
-    } catch (IOException e) {
-      e.printStackTrace();
     }
   }
 
-  private List<Claimant> getActualClaimableBalanceResponse2(String accountId, Server server) throws IOException {
+  private List<org.stellar.sdk.responses.Claimant> getActualClaimableBalanceResponse2(String accountId, Server server) {
     return server.claimableBalances().order(Order.DESC)
       .forClaimant(accountId).limit(50)
       .execute().getRecords().stream()
@@ -76,9 +71,9 @@ public class ClaimableLauncher {
     if (predicate instanceof Predicate.Unconditional) {
       return "Unconditional";
     } else if (predicate instanceof Predicate.And predicateAnd) {
-      return predicateAnd.getInner().stream().map(this::predicateToText).collect(Collectors.joining(" and "));
+      return predicateToText(predicateAnd.getLeft()) + " and " + predicateToText(predicateAnd.getRight());
     } else if (predicate instanceof Predicate.Or predicateOr) {
-      return predicateOr.getInner().stream().map(this::predicateToText).collect(Collectors.joining(" or "));
+      return predicateToText(predicateOr.getLeft()) + " or " + predicateToText(predicateOr.getRight());
     } else if (predicate instanceof Predicate.Not predicateNot) {
       return "not " + predicateToText(predicateNot.getInner());
     } else if (predicate instanceof Predicate.AbsBefore predicateAbsBefore) {
@@ -94,9 +89,9 @@ public class ClaimableLauncher {
     if (predicate instanceof Predicate.Unconditional) {
       return true;
     } else if (predicate instanceof Predicate.And predicateAnd) {
-      return predicateAnd.getInner().stream().allMatch(p -> evaluatePredicate(p, now));
+      return evaluatePredicate(predicateAnd.getLeft(), now) && evaluatePredicate(predicateAnd.getRight(), now);
     } else if (predicate instanceof Predicate.Or predicateOr) {
-      return predicateOr.getInner().stream().anyMatch(p -> evaluatePredicate(p, now));
+      return evaluatePredicate(predicateOr.getLeft(), now) || evaluatePredicate(predicateOr.getRight(), now);
     } else if (predicate instanceof Predicate.Not predicateNot) {
       return !evaluatePredicate(predicateNot.getInner(), now);
     } else if (predicate instanceof Predicate.AbsBefore predicateAbsBefore) {

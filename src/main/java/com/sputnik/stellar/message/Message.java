@@ -1,9 +1,5 @@
 package com.sputnik.stellar.message;
 
-import lombok.Data;
+public record Message(String subject, String body) {
 
-@Data
-public class Message {
-    private final String subject;
-    private final String body;
 }

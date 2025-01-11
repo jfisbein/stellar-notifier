@@ -1,21 +1,18 @@
 package com.sputnik.stellar.message;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.stellar.sdk.Asset;
-import org.stellar.sdk.AssetAmount;
 import org.stellar.sdk.AssetTypeCreditAlphaNum;
 import org.stellar.sdk.AssetTypeNative;
-import org.stellar.sdk.Claimant;
-import org.stellar.sdk.LiquidityPoolID;
 import org.stellar.sdk.Memo;
 import org.stellar.sdk.MemoText;
-import org.stellar.sdk.Price;
-import org.stellar.sdk.responses.TransactionResponse;
+import org.stellar.sdk.responses.AssetAmount;
+import org.stellar.sdk.responses.Claimant;
+import org.stellar.sdk.responses.Price;
 import org.stellar.sdk.responses.operations.AccountMergeOperationResponse;
 import org.stellar.sdk.responses.operations.BeginSponsoringFutureReservesOperationResponse;
 import org.stellar.sdk.responses.operations.BumpSequenceOperationResponse;
@@ -129,15 +126,15 @@ public class PaymentOperationMessagesCreator {
   }
 
   private Message createRevokeSponsorshipOperationResponseMessage(RevokeSponsorshipOperationResponse operation) {
-    Optional<String> accountId = operation.getAccountId();
-    Optional<String> claimableBalanceId = operation.getClaimableBalanceId();
-    Optional<String> dataAccountId = operation.getDataAccountId();
-    Optional<String> dataName = operation.getDataName();
-    Optional<Long> offerId = operation.getOfferId();
-    Optional<String> trustlineAccountId = operation.getTrustlineAccountId();
-    Optional<String> trustlineAsset = operation.getTrustlineAsset();
-    Optional<String> signerAccountId = operation.getSignerAccountId();
-    Optional<String> signerKey = operation.getSignerKey();
+    String accountId = operation.getAccountId();
+    String claimableBalanceId = operation.getClaimableBalanceId();
+    String dataAccountId = operation.getDataAccountId();
+    String dataName = operation.getDataName();
+    Long offerId = operation.getOfferId();
+    String trustlineAccountId = operation.getTrustlineAccountId();
+    String trustlineAsset = operation.getTrustlineAsset();
+    String signerAccountId = operation.getSignerAccountId();
+    String signerKey = operation.getSignerKey();
 
     String subject = "Stellar Revoke Sponsorship";
     String body = String.format(
@@ -154,32 +151,31 @@ public class PaymentOperationMessagesCreator {
   }
 
   private Message createLiquidityPoolWithdrawOperationResponseMessage(LiquidityPoolWithdrawOperationResponse operation) {
-    LiquidityPoolID liquidityPoolId = operation.getLiquidityPoolId();
-    AssetAmount[] reservesMin = operation.getReservesMin();
-    AssetAmount[] reservesReceived = operation.getReservesReceived();
+    String liquidityPoolId = operation.getLiquidityPoolId();
+    List<AssetAmount> reservesMin = operation.getReservesMin();
+    List<AssetAmount> reservesReceived = operation.getReservesReceived();
     String shares = operation.getShares();
     String subject = "Stellar Liquidity Pool Withdraw";
     String body = String.format(
       "Liquidity Pool Withdraw. Liquidity Pool Id: %s, Reserves Min: %s, Reserves Received: %s, Shares: %s",
-      liquidityPoolId, Arrays.toString(reservesMin), Arrays.toString(reservesReceived), shares);
+      liquidityPoolId, reservesMin, reservesReceived, shares);
     return new Message(subject, body);
   }
 
   private Message createLiquidityPoolDepositOperationResponseMessage(LiquidityPoolDepositOperationResponse operation) {
-    LiquidityPoolID liquidityPoolId = operation.getLiquidityPoolId();
-    AssetAmount[] reservesMax = operation.getReservesMax();
+    String liquidityPoolId = operation.getLiquidityPoolId();
+    List<AssetAmount> reservesMax = operation.getReservesMax();
     String maxPrice = operation.getMaxPrice();
     String minPrice = operation.getMinPrice();
     Price maxPriceR = operation.getMaxPriceR();
     Price minPriceR = operation.getMinPriceR();
-    AssetAmount[] reservesDeposited = operation.getReservesDeposited();
+    List<AssetAmount> reservesDeposited = operation.getReservesDeposited();
     String sharesReceived = operation.getSharesReceived();
 
     String subject = "Stellar Liquidity Pool Deposit";
     String body = String.format(
       "Liquidity Pool Deposit. Liquidity Pool Id: %s, Reserves Max: %s, Max Price: %s, Min Price: %s, Max Price R: %s, Min Price R: %s, Reserves Deposited: %s, Shares Received: %s",
-      liquidityPoolId, Arrays.toString(reservesMax), maxPrice, minPrice, maxPriceR, minPriceR, Arrays.toString(reservesDeposited),
-      sharesReceived);
+      liquidityPoolId, reservesMax, maxPrice, minPrice, maxPriceR, minPriceR, reservesDeposited, sharesReceived);
     return new Message(subject, body);
   }
 
@@ -317,22 +313,22 @@ public class PaymentOperationMessagesCreator {
   }
 
   private Message createSetOptionsOperationMessage(SetOptionsOperationResponse setOptionsOperation) {
-    String[] clearFlags = setOptionsOperation.getClearFlags();
+    List<Integer> clearFlags = setOptionsOperation.getClearFlags();
     Integer highThreshold = setOptionsOperation.getHighThreshold();
     String homeDomain = setOptionsOperation.getHomeDomain();
     String inflationDestination = setOptionsOperation.getInflationDestination();
     Integer lowThreshold = setOptionsOperation.getLowThreshold();
     Integer masterKeyWeight = setOptionsOperation.getMasterKeyWeight();
     Integer medThreshold = setOptionsOperation.getMedThreshold();
-    String[] setFlags = setOptionsOperation.getSetFlags();
+    List<Integer> setFlags = setOptionsOperation.getSetFlags();
     String signer = setOptionsOperation.getSignerKey();
     Integer signerWeight = setOptionsOperation.getSignerWeight();
 
     String subject = "Stellar Set Options operation";
     String body = String.format("Set options. clearFlags: %s, highThreshold: %s, homeDomain: %s, inflationDestination: %s, " +
         "lowThreshold: %s, masterKeyWeight: %s, medThreshold: %s, setFlags: %s, signer: %s, signerWeight: %s.",
-      Arrays.toString(clearFlags), highThreshold, homeDomain, inflationDestination,
-      lowThreshold, masterKeyWeight, medThreshold, Arrays.toString(setFlags), signer, signerWeight);
+      StringUtils.join(clearFlags, ","), highThreshold, homeDomain, inflationDestination, lowThreshold, masterKeyWeight, medThreshold,
+      StringUtils.join(setFlags, ","), signer, signerWeight);
 
     return new Message(subject, body);
   }
@@ -392,7 +388,7 @@ public class PaymentOperationMessagesCreator {
   }
 
   private Message createChangeTrustOperationMessage(ChangeTrustOperationResponse changeTrustOperation) {
-    String asset = getAssetName(changeTrustOperation.getAsset());
+    String asset = changeTrustOperation.getAssetCode();
     String trustee = changeTrustOperation.getTrustee();
     String trustor = changeTrustOperation.getTrustor();
     String limit = changeTrustOperation.getLimit();
@@ -435,7 +431,7 @@ public class PaymentOperationMessagesCreator {
   }
 
   private String getMemo(PaymentOperationResponse paymentOperation) {
-    Memo memo = paymentOperation.getTransaction().map(TransactionResponse::getMemo).orElse(null);
+    Memo memo = paymentOperation.getTransaction().getMemo();
     String memoText = "";
     if (memo instanceof MemoText memoT) {
       memoText = memoT.getText();
