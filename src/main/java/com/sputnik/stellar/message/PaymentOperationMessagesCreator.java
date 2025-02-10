@@ -431,10 +431,12 @@ public class PaymentOperationMessagesCreator {
   }
 
   private String getMemo(PaymentOperationResponse paymentOperation) {
-    Memo memo = paymentOperation.getTransaction().getMemo();
     String memoText = "";
-    if (memo instanceof MemoText memoT) {
-      memoText = memoT.getText();
+    if (paymentOperation.getTransaction() != null) {
+      Memo memo = paymentOperation.getTransaction().getMemo();
+      if (memo instanceof MemoText memoT) {
+        memoText = memoT.getText();
+      }
     }
 
     return memoText;
